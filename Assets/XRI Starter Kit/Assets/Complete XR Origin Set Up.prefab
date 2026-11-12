@@ -1068,7 +1068,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 444403662947373465, guid: 895f6f3c2d334633b5800312285058d2, type: 3}
       propertyPath: m_SelectActionTrigger
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 645029249090353763, guid: 895f6f3c2d334633b5800312285058d2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -1264,7 +1264,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7438353938317790982, guid: 895f6f3c2d334633b5800312285058d2, type: 3}
       propertyPath: m_SelectActionTrigger
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7456286008589067813, guid: 895f6f3c2d334633b5800312285058d2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
