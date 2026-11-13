@@ -95,9 +95,43 @@ namespace XR.Interaction.Toolkit.Samples
             set => m_RightHandMovementDirection = value;
         }
 
+        [Header("Movement Speed")]
+        [SerializeField]
+        [Tooltip("The minimum movement speed, in units per second, used when the hand movement strength is minimal.")]
+        float m_MinMoveSpeed = 0.5f;
+
+        /// <summary>
+        /// The minimum movement speed, in units per second, used when the hand movement strength is minimal.
+        /// </summary>
+        public float minMoveSpeed
+        {
+            get => m_MinMoveSpeed;
+            set => m_MinMoveSpeed = value;
+        }
+
+        [SerializeField]
+        [Tooltip("The maximum movement speed, in units per second, used when the hand movement strength is maximal.")]
+        float m_MaxMoveSpeed = 5f;
+
+        /// <summary>
+        /// The maximum movement speed, in units per second, used when the hand movement strength is maximal.
+        /// </summary>
+        public float maxMoveSpeed
+        {
+            get => m_MaxMoveSpeed;
+            set => m_MaxMoveSpeed = value;
+        }
+
         Transform m_CombinedTransform;
         Pose m_LeftMovementPose = Pose.identity;
         Pose m_RightMovementPose = Pose.identity;
+
+        /// <summary>
+        /// The move speed configured in the base class, in units per second, used as the reference move speed
+        /// when the hand strength is maximal. Updated each frame based on the current hand strength and the
+        /// <see cref="minMoveSpeed"/> and <see cref="maxMoveSpeed"/> constraints.
+        /// </summary>
+        float m_ConfiguredMoveSpeed;
 
         /// <inheritdoc />
         protected override void Awake()
@@ -110,6 +144,8 @@ namespace XR.Interaction.Toolkit.Samples
             m_CombinedTransform.localRotation = Quaternion.identity;
 
             forwardSource = m_CombinedTransform;
+
+            m_ConfiguredMoveSpeed = moveSpeed;
         }
 
         /// <inheritdoc />
@@ -175,6 +211,16 @@ namespace XR.Interaction.Toolkit.Samples
             // Combine the two poses into the forward source based on the magnitude of input
             var leftHandValue = leftHandMoveInput.ReadValue();
             var rightHandValue = rightHandMoveInput.ReadValue();
+
+            // Calculate the strength of the hand movements to scale the movement speed.
+            // The stronger the player moves their hands (controllers), the faster the XR Origin moves.
+            var handStrength = Mathf.Clamp01((leftHandValue + rightHandValue).magnitude);
+
+            // Calculate the movement speed based on the hand strength, constrained between the min and max move speed.
+            // The base class multiplies the move speed by the input magnitude (the hand strength), so the desired
+            // move speed is divided by the hand strength to apply it directly.
+            var desiredMoveSpeed = Mathf.Clamp(m_ConfiguredMoveSpeed * handStrength, minMoveSpeed, maxMoveSpeed);
+            moveSpeed = handStrength > 0f ? desiredMoveSpeed / handStrength : m_ConfiguredMoveSpeed;
 
             var totalSqrMagnitude = leftHandValue.sqrMagnitude + rightHandValue.sqrMagnitude;
             var leftHandBlend = 0.5f;

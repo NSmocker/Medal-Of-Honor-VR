@@ -1,0 +1,106 @@
+
+import bpy
+import os
+import shutil
+
+# ВКАЖИ ПАПКУ ДЛЯ ЗБЕРЕЖЕННЯ
+OUTPUT_DIR = r"D:\ExportedTextures"
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+exported = 0
+processed = set()
+
+
+def unique_path(filename):
+    name, ext = os.path.splitext(filename)
+    path = os.path.join(OUTPUT_DIR, filename)
+    i = 1
+
+    while os.path.exists(path):
+        path = os.path.join(
+            OUTPUT_DIR, f"{name}_{i}{ext}"
+        )
+        i += 1
+
+    return path
+
+
+def find_images(node_tree, visited=None):
+    if node_tree is None:
+        return
+
+    if visited is None:
+        visited = set()
+
+    ptr = node_tree.as_pointer()
+
+    if ptr in visited:
+        return
+
+    visited.add(ptr)
+
+    for node in node_tree.nodes:
+        if node.type == 'TEX_IMAGE' and node.image:
+            yield node.image
+
+        if node.type == 'GROUP' and node.node_tree:
+            yield from find_images(
+                node.node_tree, visited
+            )
+
+
+for mat in bpy.data.materials:
+    if not mat.use_nodes:
+        continue
+
+    for image in find_images(mat.node_tree):
+        ptr = image.as_pointer()
+
+        if ptr in processed:
+            continue
+
+        processed.add(ptr)
+
+        if image.source != 'FILE':
+            continue
+
+        # Визначаємо формат
+        if image.file_format == 'JPEG':
+            ext = ".jpg"
+        elif image.file_format == 'WEBP':
+            ext = ".webp"
+        else:
+            ext = ".png"
+
+        name = os.path.splitext(image.name)[0]
+        filename = bpy.path.clean_name(name) + ext
+
+        destination = unique_path(filename)
+
+        try:
+            if image.packed_file:
+                # Записуємо оригінальні байти
+                with open(destination, "wb") as f:
+                    f.write(image.packed_file.data)
+
+            else:
+                source = bpy.path.abspath(
+                    image.filepath
+                )
+
+                if os.path.isfile(source):
+                    shutil.copy2(source, destination)
+                else:
+                    # Якщо файл відсутній,
+                    # пробуємо зберегти з Blender
+                    image.save_render(destination)
+
+            exported += 1
+            print("Exported:", destination)
+
+        except Exception as e:
+            print("ERROR:", image.name, e)
+
+
+print(f"Done! Exported {exported} textures.")
